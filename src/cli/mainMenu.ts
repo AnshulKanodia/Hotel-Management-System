@@ -1,16 +1,14 @@
 import inquirer from 'inquirer';
+import { customerMenu } from './customerMenu';
 
 /**
  * mainMenu
  * ─────────
- * Entry point for the Hotel Management CLI.
- * Displays the top-level navigation menu in a loop so the user
- * can keep performing operations until they choose to exit.
+ * Top-level navigation loop for the Hotel Management CLI.
  *
  * File location: src/cli/mainMenu.ts
  */
 
-// ─── Menu Choice Type ──────────────────────────────────────
 type MainMenuChoice =
   | 'departments'
   | 'customers'
@@ -20,7 +18,6 @@ type MainMenuChoice =
   | 'reports'
   | 'exit';
 
-// ─── ASCII Banner ──────────────────────────────────────────
 const printBanner = (): void => {
   console.clear();
   console.log('='.repeat(50));
@@ -30,7 +27,11 @@ const printBanner = (): void => {
   console.log();
 };
 
-// ─── Main Menu Loop ────────────────────────────────────────
+const pause = (): Promise<void> =>
+  inquirer
+    .prompt([{ type: 'input', name: '_', message: 'Press Enter to return to the main menu...' }])
+    .then(() => undefined);
+
 export const mainMenu = async (): Promise<void> => {
   let running = true;
 
@@ -57,32 +58,32 @@ export const mainMenu = async (): Promise<void> => {
 
     switch (choice) {
       case 'departments':
-        console.log('\n🏢  Department management — coming in Phase 6.2\n');
+        console.log('\n🏢  Department management — coming soon\n');
         await pause();
         break;
 
       case 'customers':
-        console.log('\n👤  Customer management — coming in Phase 6.2\n');
-        await pause();
+        // ✅ Phase 6.2 — fully implemented
+        await customerMenu();
         break;
 
       case 'staff':
-        console.log('\n👔  Staff management — coming in Phase 6.2\n');
+        console.log('\n👔  Staff management — coming soon\n');
         await pause();
         break;
 
       case 'rooms':
-        console.log('\n🛏️   Room management — coming in Phase 6.2\n');
+        console.log('\n🛏️   Room management — coming soon\n');
         await pause();
         break;
 
       case 'bookings':
-        console.log('\n📅  Booking management — coming in Phase 6.2\n');
+        console.log('\n📅  Booking management — coming soon\n');
         await pause();
         break;
 
       case 'reports':
-        console.log('\n📊  Reports & Analytics — coming in Phase 6.2\n');
+        console.log('\n📊  Reports & Analytics — coming soon\n');
         await pause();
         break;
 
@@ -93,9 +94,3 @@ export const mainMenu = async (): Promise<void> => {
     }
   }
 };
-
-// ─── Helper: Wait for keypress before redrawing menu ──────
-const pause = (): Promise<void> =>
-  inquirer
-    .prompt([{ type: 'input', name: '_', message: 'Press Enter to return to the main menu...' }])
-    .then(() => undefined);
