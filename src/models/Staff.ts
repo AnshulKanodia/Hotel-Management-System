@@ -68,6 +68,10 @@ const StaffSchema = new Schema<IStaff>(
   }
 );
 
+// ─── Index ───────────────────────────────────────────────────
+/** Speeds up department-filter queries and dept deletion guard */
+StaffSchema.index({ department: 1 });
+
 const Staff = model<IStaff>('Staff', StaffSchema);
 
 export default Staff;

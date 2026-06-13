@@ -33,12 +33,6 @@ const printBanner = (): void => {
   console.log();
 };
 
-// pause is available for future use — suppress unused-var lint if needed
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const pause = async (): Promise<void> => {
-  await input({ message: 'Press Enter to return to the main menu...' });
-};
-
 export const mainMenu = async (): Promise<void> => {
   let running = true;
 
@@ -47,6 +41,7 @@ export const mainMenu = async (): Promise<void> => {
 
     const choice = await select<MainMenuChoice>({
       message: '📋  What would you like to manage?',
+      loop: false,
       choices: [
         { name: '🏢  Departments', value: 'departments' },
         { name: '👤  Customers',   value: 'customers'   },

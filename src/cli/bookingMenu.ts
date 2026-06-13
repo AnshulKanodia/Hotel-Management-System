@@ -155,6 +155,7 @@ const createBooking = async (): Promise<void> => {
   const customerId = await select<string>({
     message: 'Step 1/4 — Select Customer:',
     choices: custChoices,
+    loop: false,
     pageSize: 10,
   });
   if (customerId === 'cancel') return;
@@ -224,6 +225,7 @@ const createBooking = async (): Promise<void> => {
   const roomId = await select<string>({
     message: `Step 4/4 — Select Room  (${nights} night${nights > 1 ? 's' : ''}):`,
     choices: roomChoices,
+    loop: false,
     pageSize: 12,
   });
   if (roomId === 'cancel') return;
@@ -295,7 +297,7 @@ const pickBooking = async (
   choices.push(new Separator('─────────────────────'));
   choices.push({ name: '↩  Cancel', value: 'cancel' });
 
-  const selectedId = await select<string>({ message, choices, pageSize: 10 });
+  const selectedId = await select<string>({ message, choices, loop: false, pageSize: 10 });
   if (selectedId === 'cancel') return null;
 
   return bookings.find(
@@ -501,6 +503,7 @@ const viewBookingDetails = async (): Promise<void> => {
   const selectedId = await select<string>({
     message: 'Select booking to view:',
     choices,
+    loop: false,
     pageSize: 12,
   });
 
@@ -561,6 +564,7 @@ export const bookingMenu = async (): Promise<void> => {
 
     const choice = await select<BookingMenuChoice>({
       message: '📅  Booking Management — choose an action:',
+      loop: false,
       choices: [
         { name: '📋  View All Bookings',    value: 'view'     },
         { name: '➕  Create Booking',       value: 'create'   },

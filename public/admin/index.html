@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hotel Admin Panel</title>
+<meta name="description" content="Hotel Management System — Web Admin Panel">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & Variables ─────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:           #07101f;
+    --surface:      #0c1829;
+    --card:         #111e34;
+    --card2:        #162540;
+    --border:       rgba(148,163,184,.1);
+    --border2:      rgba(148,163,184,.06);
+    --accent:       #f59e0b;
+    --accent-dim:   rgba(245,158,11,.13);
+    --accent-hover: #fbbf24;
+    --text:         #e2e8f0;
+    --text-dim:     #94a3b8;
+    --text-muted:   #64748b;
+    --green:        #10b981;
+    --green-bg:     rgba(16,185,129,.13);
+    --red:          #ef4444;
+    --red-bg:       rgba(239,68,68,.13);
+    --amber:        #f59e0b;
+    --amber-bg:     rgba(245,158,11,.13);
+    --blue:         #60a5fa;
+    --blue-bg:      rgba(96,165,250,.13);
+    --purple:       #a78bfa;
+    --purple-bg:    rgba(167,139,250,.13);
+    --sidebar-w:    240px;
+    --r:            10px;
+    --r-sm:         6px;
+    --shadow:       0 4px 24px rgba(0,0,0,.35);
+  }
+  html { font-size: 14px; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
+         min-height: 100vh; overflow-x: hidden; }
+
+  /* ── Login Screen ──────────────────────────────────────── */
+  #login-view {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 30% 40%, rgba(245,158,11,.08) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 70%, rgba(96,165,250,.06) 0%, transparent 50%),
+                var(--bg);
+  }
+  .login-card {
+    width: 380px; padding: 48px 40px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+    animation: fadeUp .4s ease;
+  }
+  .login-icon {
+    width: 72px; height: 72px; border-radius: 50%; font-size: 32px;
+    background: var(--accent-dim); border: 2px solid rgba(245,158,11,.3);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; box-shadow: 0 0 32px rgba(245,158,11,.15);
+  }
+  .login-card h1 { font-size: 1.5rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .login-card p  { font-size: .85rem; color: var(--text-muted); margin-bottom: 32px; }
+  .pw-wrap {
+    position: relative; width: 100%; margin-bottom: 16px;
+  }
+  .pw-wrap input {
+    width: 100%; padding: 12px 44px 12px 16px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+    color: var(--text); font-size: .95rem; font-family: inherit; outline: none;
+    transition: border .2s;
+  }
+  .pw-wrap input:focus { border-color: var(--accent); }
+  .pw-wrap input::placeholder { color: var(--text-muted); }
+  #pw-toggle {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; font-size: 1rem;
+    color: var(--text-muted); padding: 4px; line-height: 1;
+    transition: color .2s;
+  }
+  #pw-toggle:hover { color: var(--text); }
+  #login-error {
+    width: 100%; padding: 10px 14px; border-radius: var(--r-sm);
+    background: var(--red-bg); color: var(--red); font-size: .85rem;
+    margin-bottom: 12px; display: none; text-align: center;
+  }
+  #login-btn {
+    width: 100%; padding: 13px; border: none; border-radius: var(--r);
+    background: var(--accent); color: #000; font-weight: 700; font-size: .95rem;
+    cursor: pointer; font-family: inherit; transition: all .2s; letter-spacing: .3px;
+  }
+  #login-btn:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,158,11,.35); }
+  #login-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  /* ── App Layout ────────────────────────────────────────── */
+  #app-view { display: none; height: 100vh; flex-direction: row; }
+  #app-view.visible { display: flex; }
+
+  /* Sidebar */
+  #sidebar {
+    width: var(--sidebar-w); height: 100vh; position: fixed; left: 0; top: 0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; z-index: 100; flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .brand {
+    padding: 24px 20px 20px; font-size: 1rem; font-weight: 700;
+    border-bottom: 1px solid var(--border); color: var(--text); letter-spacing: .3px;
+  }
+  .brand span { color: var(--accent); }
+  #nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: var(--r-sm); color: var(--text-dim); cursor: pointer; border: none;
+    background: none; font-family: inherit; font-size: .9rem; font-weight: 500;
+    transition: all .15s; width: 100%; text-align: left; letter-spacing: .2px;
+  }
+  .nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-item:hover  { background: var(--card); color: var(--text); }
+  .nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+  .sidebar-footer {
+    padding: 12px 10px; border-top: 1px solid var(--border);
+  }
+  #logout-btn {
+    width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: var(--r-sm); background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-family: inherit; font-size: .9rem; font-weight: 500;
+    transition: all .15s;
+  }
+  #logout-btn:hover { background: var(--red-bg); color: var(--red); }
+
+  /* Main Area */
+  #main {
+    margin-left: var(--sidebar-w); flex: 1; overflow-y: auto; min-height: 100vh;
+  }
+  #topbar {
+    padding: 18px 28px; border-bottom: 1px solid var(--border);
+    background: var(--surface); position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+  }
+  #page-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  #page-sub   { font-size: .8rem; color: var(--text-muted); margin-top: 1px; }
+  #content    { padding: 28px; }
+
+  /* ── Cards & Stat Grid ─────────────────────────────────── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+    padding: 20px; position: relative; overflow: hidden; transition: transform .2s, border-color .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--c, var(--accent));
+  }
+  .stat-icon  { font-size: 1.5rem; margin-bottom: 12px; }
+  .stat-val   { font-size: 1.8rem; font-weight: 800; color: var(--text); line-height: 1; }
+  .stat-label { font-size: .75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; letter-spacing: .5px; text-transform: uppercase; }
+
+  /* ── Section Cards ─────────────────────────────────────── */
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+  .section-header {
+    padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;
+  }
+  .section-header h2 { font-size: 1rem; font-weight: 600; }
+  .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  /* ── Buttons ───────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+    border: none; border-radius: var(--r-sm); cursor: pointer; font-family: inherit;
+    font-size: .85rem; font-weight: 600; transition: all .15s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-ghost   { background: var(--card2); color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: rgba(148,163,184,.25); }
+  .btn-danger  { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,.25); }
+  .btn-danger:hover { background: var(--red); color: #fff; }
+  .btn-green   { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,.25); }
+  .btn-green:hover  { background: var(--green); color: #fff; }
+  .btn-blue    { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,.25); }
+  .btn-blue:hover   { background: var(--blue); color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: .78rem; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+
+  /* ── Search ────────────────────────────────────────────── */
+  .search-input {
+    padding: 7px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-sm); color: var(--text); font-family: inherit; font-size: .85rem;
+    outline: none; transition: border .2s; width: 210px;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  /* ── Table ─────────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { border-bottom: 1px solid var(--border); }
+  th { padding: 12px 16px; text-align: left; font-size: .72rem; font-weight: 600;
+       color: var(--text-muted); letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
+  td { padding: 13px 16px; font-size: .88rem; color: var(--text-dim); border-bottom: 1px solid var(--border2); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,.02); }
+  .td-name { color: var(--text); font-weight: 500; }
+  .td-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .no-data { padding: 48px 20px; text-align: center; color: var(--text-muted); }
+  .no-data .nd-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .loading-row td { text-align: center; padding: 40px; color: var(--text-muted); }
+
+  /* ── Badges ────────────────────────────────────────────── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+    border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap;
+  }
+  .badge::before { content: '●'; font-size: .55rem; }
+  .badge-green  { background: var(--green-bg);  color: var(--green);  }
+  .badge-red    { background: var(--red-bg);    color: var(--red);    }
+  .badge-amber  { background: var(--amber-bg);  color: var(--amber);  }
+  .badge-blue   { background: var(--blue-bg);   color: var(--blue);   }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); }
+  .badge-gray   { background: rgba(100,116,139,.15); color: var(--text-muted); }
+
+  /* ── Booking Filter Tabs ───────────────────────────────── */
+  .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 5px 14px; border-radius: var(--r-sm); border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit;
+    font-size: .82rem; font-weight: 500; transition: all .15s;
+  }
+  .tab-btn:hover   { color: var(--text); border-color: rgba(148,163,184,.25); }
+  .tab-btn.active  { background: var(--accent-dim); color: var(--accent); border-color: rgba(245,158,11,.3); font-weight: 600; }
+
+  /* ── Modal ─────────────────────────────────────────────── */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #modal-overlay.open { display: flex; animation: fadeIn .15s ease; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); width: 100%; max-width: 520px; max-height: 90vh;
+    overflow-y: auto; animation: slideUp .2s ease;
+  }
+  .modal-header {
+    padding: 20px 24px 16px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0;
+    background: var(--card); z-index: 1; border-radius: 14px 14px 0 0;
+  }
+  .modal-header h2 { font-size: 1rem; font-weight: 700; }
+  #modal-close {
+    width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--card2);
+    color: var(--text-dim); cursor: pointer; font-size: 1.1rem; display: flex;
+    align-items: center; justify-content: center; transition: all .15s;
+  }
+  #modal-close:hover { background: var(--red-bg); color: var(--red); }
+  #modal-body { padding: 20px 24px; }
+  #modal-err {
+    margin: 0 24px 16px; padding: 10px 14px; border-radius: var(--r-sm);
+    background: var(--red-bg); color: var(--red); font-size: .85rem; display: none;
+  }
+  .modal-footer {
+    padding: 16px 24px; border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 10px;
+    position: sticky; bottom: 0; background: var(--card);
+    border-radius: 0 0 14px 14px;
+  }
+
+  /* ── Form Styles ───────────────────────────────────────── */
+  .form-group { margin-bottom: 16px; }
+  .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group label {
+    display: block; margin-bottom: 6px; font-size: .8rem;
+    font-weight: 600; color: var(--text-dim); letter-spacing: .3px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 10px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--r-sm);
+    color: var(--text); font-family: inherit; font-size: .9rem;
+    outline: none; transition: border .2s; resize: vertical;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group select { appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .form-group select option { background: var(--card); }
+  .form-group input[readonly] { color: var(--text-muted); cursor: default; }
+  .form-hint { font-size: .75rem; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Toast ─────────────────────────────────────────────── */
+  #toasts { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    padding: 12px 18px; border-radius: var(--r); min-width: 240px; max-width: 340px;
+    font-size: .85rem; font-weight: 500; border-left: 3px solid;
+    animation: slideRight .25s ease; box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast-success { background: var(--card2); border-color: var(--green); color: var(--text); }
+  .toast-error   { background: var(--card2); border-color: var(--red);   color: var(--text); }
+  .toast-info    { background: var(--card2); border-color: var(--blue);  color: var(--text); }
+  .toast.fadeout { animation: fadeOut .3s ease forwards; }
+
+  /* ── Confirm Dialog ────────────────────────────────────── */
+  #confirm-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    backdrop-filter: blur(4px); z-index: 1100; align-items: center; justify-content: center;
+  }
+  #confirm-overlay.open { display: flex; animation: fadeIn .15s ease; }
+  .confirm-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 28px; max-width: 380px; width: 90%; box-shadow: var(--shadow);
+    animation: slideUp .2s ease;
+  }
+  .confirm-icon { font-size: 2rem; margin-bottom: 12px; }
+  .confirm-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+  .confirm-box p  { font-size: .88rem; color: var(--text-dim); margin-bottom: 24px; line-height: 1.5; }
+  .confirm-btns   { display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ── Animations ────────────────────────────────────────── */
+  @keyframes fadeUp   { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes fadeOut  { to { opacity: 0; transform: translateX(20px); } }
+
+  /* ── Misc ──────────────────────────────────────────────── */
+  .mono  { font-family: 'Courier New', monospace; font-size: .8rem; color: var(--text-muted); }
+  .hidden { display: none !important; }
+  .price { color: var(--green); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN ════════════════════════ -->
+<div id="login-view">
+  <div class="login-card">
+    <div class="login-icon">🏨</div>
+    <h1>Hotel Admin</h1>
+    <p>Enter password to access the management panel</p>
+    <div class="pw-wrap">
+      <input type="password" id="pw-input" placeholder="Admin password" autocomplete="current-password">
+      <button id="pw-toggle" type="button" title="Show/hide password">👁</button>
+    </div>
+    <div id="login-error"></div>
+    <button id="login-btn">Sign In</button>
+  </div>
+</div>
+
+<!-- ════════════════════════ APP ════════════════════════ -->
+<div id="app-view">
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="brand">🏨 <span>Hotel</span> Admin</div>
+    <nav id="nav">
+      <button class="nav-item active" data-section="dashboard"><span class="nav-icon">🏠</span> Dashboard</button>
+      <button class="nav-item" data-section="rooms"><span class="nav-icon">🛏️</span> Rooms</button>
+      <button class="nav-item" data-section="bookings"><span class="nav-icon">📅</span> Bookings</button>
+      <button class="nav-item" data-section="customers"><span class="nav-icon">👤</span> Customers</button>
+      <button class="nav-item" data-section="staff"><span class="nav-icon">👔</span> Staff</button>
+      <button class="nav-item" data-section="depts"><span class="nav-icon">🏢</span> Departments</button>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="logout-btn"><span style="font-size:1rem">🚪</span> Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="topbar">
+      <div>
+        <div id="page-title">Dashboard</div>
+        <div id="page-sub">Hotel Management System</div>
+      </div>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════ MODAL ══════════════════════ -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Title</h2>
+      <button id="modal-close">✕</button>
+    </div>
+    <div id="modal-body"></div>
+    <div id="modal-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ CONFIRM ══════════════════════ -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="ci">⚠️</div>
+    <h3 id="cm-title"></h3>
+    <p  id="cm-msg"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" id="cm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="cm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TOASTS ══════════════════════ -->
+<div id="toasts"></div>
+
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+const S = {
+  token:   localStorage.getItem('hms_admin_token') || '',
+  section: 'dashboard',
+  depts:   [],
+  customers: [],
+};
+
+// ════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtDate   = d => d ? new Date(d).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+const fmtMoney  = n => '₹' + Number(n).toLocaleString('en-IN');
+const nights    = (i,o) => Math.max(0, Math.round((new Date(o)-new Date(i))/(1000*60*60*24)));
+const statusBadge = s => {
+  const m = {
+    Available:'badge-green', Occupied:'badge-red', Maintenance:'badge-amber',
+    Booked:'badge-blue', CheckedIn:'badge-green', CheckedOut:'badge-purple', Cancelled:'badge-gray'
+  };
+  return `<span class="badge ${m[s]||'badge-gray'}">${esc(s)}</span>`;
+};
+
+// ════════════════════════════════════════════════
+//  API
+// ════════════════════════════════════════════════
+async function api(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (method !== 'GET' && S.token) headers['Authorization'] = 'Bearer ' + S.token;
+  const r = await fetch('/api' + path, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const d = await r.json().catch(() => ({ message: 'Invalid server response' }));
+  if (r.status === 401) { doLogout(); throw new Error('Session expired. Please log in again.'); }
+  if (!r.ok) throw new Error(d.message || 'Request failed (' + r.status + ')');
+  return d;
+}
+
+// ════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════
+function toast(msg, type='success') {
+  const icon = { success:'✅', error:'❌', info:'ℹ️' }[type] || '✅';
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => { el.classList.add('fadeout'); setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+// ════════════════════════════════════════════════
+//  CONFIRM DIALOG
+// ════════════════════════════════════════════════
+let _confirmResolve = null;
+function showConfirm(title, msg, icon='⚠️', btnLabel='Confirm', danger=true) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('ci').textContent = icon;
+    document.getElementById('cm-title').textContent = title;
+    document.getElementById('cm-msg').textContent = msg;
+    const ok = document.getElementById('cm-ok');
+    ok.textContent = btnLabel;
+    ok.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+    document.getElementById('confirm-overlay').classList.add('open');
+  });
+}
+document.getElementById('cm-cancel').onclick = () => { document.getElementById('confirm-overlay').classList.remove('open'); _confirmResolve && _confirmResolve(false); };
+document.getElementById('cm-ok').onclick     = () => { document.getElementById('confirm-overlay').classList.remove('open'); _confirmResolve && _confirmResolve(true);  };
+
+// ════════════════════════════════════════════════
+//  MODAL
+// ════════════════════════════════════════════════
+let _modalHandler = null;
+function openModal(title, bodyHtml, onSubmit, submitLabel='Save') {
+  document.getElementById('modal-title').textContent  = title;
+  document.getElementById('modal-body').innerHTML     = bodyHtml;
+  document.getElementById('modal-err').style.display  = 'none';
+  document.getElementById('modal-err').textContent    = '';
+  document.getElementById('modal-submit').textContent = submitLabel;
+  document.getElementById('modal-submit').disabled    = false;
+  _modalHandler = onSubmit;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  _modalHandler = null;
+}
+function modalLoading(on) {
+  document.getElementById('modal-submit').disabled    = on;
+  document.getElementById('modal-submit').textContent = on ? 'Saving…' : 'Save';
+}
+function modalError(msg) {
+  const el = document.getElementById('modal-err');
+  el.textContent    = msg;
+  el.style.display  = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+document.getElementById('modal-close').onclick  = closeModal;
+document.getElementById('modal-cancel').onclick = closeModal;
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-overlay')) closeModal(); });
+document.getElementById('modal-submit').onclick = () => { _modalHandler && _modalHandler(); };
+
+// ════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+  if (!pw) { errEl.textContent = 'Please enter the admin password.'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const d = await api('POST', '/admin/login', { password: pw });
+    S.token = d.token;
+    localStorage.setItem('hms_admin_token', d.token);
+    showApp();
+  } catch (e) {
+    errEl.textContent = e.message; errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+async function doLogout() {
+  try { if (S.token) await api('POST', '/admin/logout'); } catch(_) {}
+  S.token = '';
+  localStorage.removeItem('hms_admin_token');
+  document.getElementById('app-view').classList.remove('visible');
+  document.getElementById('login-view').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'Sign In';
+}
+
+function checkAuth() {
+  if (S.token) showApp();
+}
+
+function showApp() {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('app-view').classList.add('visible');
+  navigate('dashboard');
+}
+
+document.getElementById('login-btn').onclick  = doLogin;
+document.getElementById('logout-btn').onclick = () => showConfirm('Log Out', 'Are you sure you want to log out?', '🚪', 'Log Out', false).then(ok => { if (ok) doLogout(); });
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('pw-toggle').onclick = () => {
+  const inp = document.getElementById('pw-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+};
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+const SECTIONS = { dashboard:'Dashboard', rooms:'Rooms', bookings:'Bookings', customers:'Customers', staff:'Staff', depts:'Departments' };
+function navigate(section) {
+  S.section = section;
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.section === section));
+  document.getElementById('page-title').textContent = SECTIONS[section] || section;
+  document.getElementById('content').innerHTML = `<div class="loading-row"><table><tr><td>⏳ Loading…</td></tr></table></div>`;
+  const loaders = { dashboard: loadDashboard, rooms: loadRooms, bookings: loadBookings, customers: loadCustomers, staff: loadStaff, depts: loadDepts };
+  (loaders[section] || (() => {}))();
+}
+document.querySelectorAll('.nav-item').forEach(b => b.addEventListener('click', () => navigate(b.dataset.section)));
+
+// ════════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const [dash, rooms, bk, rev, cust, st, dpt] = await Promise.all([
+      api('GET', '/reports/dashboard'),
+      api('GET', '/reports/room-status'),
+      api('GET', '/reports/booking-status'),
+      api('GET', '/reports/revenue'),
+      api('GET', '/customers'),
+      api('GET', '/staff'),
+      api('GET', '/departments'),
+    ]);
+    // Dashboard: { totalCustomers, totalStaff, totalBookings, availableRooms, occupiedRooms, maintenanceRooms }
+    const d  = dash.data   || {};
+    // Room status: { summary: { Available, Occupied, Maintenance }, breakdown: [...] }
+    const rs = rooms.data?.summary || {};
+    // Booking status: { summary: { Booked, CheckedIn, CheckedOut, Cancelled } }
+    const bs = bk.data?.summary   || {};
+    // Revenue: { totalRevenue, completedBookings, averageBookingValue }
+    const rv = rev.data            || {};
+    // List endpoints: { count, data: [...] }
+    const el = document.getElementById('content');
+    el.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card" style="--c:var(--green)">  <div class="stat-icon">🛏️</div><div class="stat-val">${d.availableRooms||rs.Available||0}</div><div class="stat-label">Available Rooms</div></div>
+        <div class="stat-card" style="--c:var(--red)">    <div class="stat-icon">🔴</div><div class="stat-val">${d.occupiedRooms||rs.Occupied||0}</div><div class="stat-label">Occupied Rooms</div></div>
+        <div class="stat-card" style="--c:var(--amber)">  <div class="stat-icon">🔧</div><div class="stat-val">${d.maintenanceRooms||rs.Maintenance||0}</div><div class="stat-label">Maintenance</div></div>
+        <div class="stat-card" style="--c:var(--blue)">   <div class="stat-icon">📅</div><div class="stat-val">${(bs.Booked||0)+(bs.CheckedIn||0)}</div><div class="stat-label">Active Bookings</div></div>
+        <div class="stat-card" style="--c:var(--purple)"> <div class="stat-icon">💰</div><div class="stat-val" style="font-size:1.3rem">${fmtMoney(rv.totalRevenue||0)}</div><div class="stat-label">Total Revenue</div></div>
+        <div class="stat-card" style="--c:#e879f9">       <div class="stat-icon">👤</div><div class="stat-val">${d.totalCustomers||cust.count||0}</div><div class="stat-label">Customers</div></div>
+        <div class="stat-card" style="--c:#38bdf8">       <div class="stat-icon">👔</div><div class="stat-val">${d.totalStaff||st.count||0}</div><div class="stat-label">Staff Members</div></div>
+        <div class="stat-card" style="--c:#a78bfa">       <div class="stat-icon">🏢</div><div class="stat-val">${dpt.count||0}</div><div class="stat-label">Departments</div></div>
+      </div>
+      <div class="section-card">
+        <div class="section-header">
+          <h2>📅 Recent Bookings</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Customer</th><th>Room</th><th>Check-In</th><th>Check-Out</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody id="dash-bk-body"></tbody>
+          </table>
+        </div>
+      </div>`;
+    loadRecentBookings();
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="no-data"><div class="nd-icon">❌</div><p>${esc(e.message)}</p></div>`;
+  }
+}
+
+async function loadRecentBookings() {
+  try {
+    const r = await api('GET', '/bookings?limit=10');
+    const items = (r.data || []).slice(0, 10);
+    const tb = document.getElementById('dash-bk-body');
+    if (!tb) return;
+    if (!items.length) { tb.innerHTML = '<tr><td colspan="6" class="no-data" style="padding:24px;text-align:center;color:var(--text-muted)">No bookings yet</td></tr>'; return; }
+    tb.innerHTML = items.map(b => `
+      <tr>
+        <td class="td-name">${esc(b.customer?.name||'—')}</td>
+        <td>${esc(b.room?.roomNumber||'—')} <span style="color:var(--text-muted);font-size:.78rem">${esc(b.room?.roomType||'')}</span></td>
+        <td>${fmtDate(b.checkInDate)}</td>
+        <td>${fmtDate(b.checkOutDate)}</td>
+        <td class="price">${fmtMoney(b.totalAmount)}</td>
+        <td>${statusBadge(b.bookingStatus)}</td>
+      </tr>`).join('');
+  } catch(_) {}
+}
+
+// ════════════════════════════════════════════════
+//  ROOMS
+// ════════════════════════════════════════════════
+let _rooms = [];
+async function loadRooms() {
+  try {
+    const r = await api('GET', '/rooms');
+    _rooms = r.data || [];
+    renderRooms('');
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="no-data"><div class="nd-icon">❌</div><p>${esc(e.message)}</p></div>`;
+  }
+}
+
+function renderRooms(filter) {
+  const data = filter ? _rooms.filter(r =>
+    r.roomNumber.toLowerCase().includes(filter) ||
+    r.roomType.toLowerCase().includes(filter) ||
+    r.status.toLowerCase().includes(filter)
+  ) : _rooms;
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+    <div class="section-card">
+      <div class="section-header">
+        <h2>🛏️ Rooms <span style="color:var(--text-muted);font-weight:400;font-size:.85rem">(${data.length})</span></h2>
+        <div class="header-actions">
+          <input class="search-input" placeholder="🔍  Search rooms…" id="room-search" value="${esc(filter)}">
+          <button class="btn btn-primary" onclick="openRoomModal(null)">➕ Add Room</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Room #</th><th>Type</th><th>Price/Night</th><th>Capacity</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${data.length ? data.map(r => `
+            <tr>
+              <td class="td-name mono">${esc(r.roomNumber)}</td>
+              <td>${esc(r.roomType)}</td>
+              <td class="price">${fmtMoney(r.pricePerNight)}</td>
+              <td>${r.capacity} guest${r.capacity>1?'s':''}</td>
+              <td>${statusBadge(r.status)}</td>
+              <td><div class="td-actions">
+                <button class="btn btn-ghost btn-sm" onclick="openRoomModal('${esc(r._id)}')">✏️ Edit</button>
+                <button class="btn btn-ghost btn-sm" onclick="changeRoomStatus('${esc(r._id)}','${esc(r.roomNumber)}','${esc(r.status)}')">🔄 Status</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteRoom('${esc(r._id)}','${esc(r.roomNumber)}')">🗑️</button>
+              </div></td>
+            </tr>`).join('') : '<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--text-muted)">No rooms found</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById('room-search').addEventListener('input', e => renderRooms(e.target.value.toLowerCase()));
+}
+
+function openRoomModal(id) {
+  const room = id ? _rooms.find(r => r._id === id) : null;
+  const title = room ? `Edit Room ${room.roomNumber}` : 'Add New Room';
+  const html = `
+    <div class="form-row">
+      <div class="form-group">
+        <label>Room Number *</label>
+        <input id="f-rnum" value="${esc(room?.roomNumber||'')}" placeholder="e.g. 101, 202A" ${room?'readonly':''}>
+      </div>
+      <div class="form-group">
+        <label>Room Type *</label>
+        <input id="f-rtype" value="${esc(room?.roomType||'')}" placeholder="Single, Double, Suite…">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Price Per Night (₹) *</label>
+        <input id="f-rprice" type="number" min="0" value="${room?.pricePerNight||''}">
+      </div>
+      <div class="form-group">
+        <label>Capacity (guests) *</label>
+        <input id="f-rcap" type="number" min="1" value="${room?.capacity||''}">
+      </div>
+    </div>
+    ${room ? `<div class="form-group">
+      <label>Status</label>
+      <select id="f-rstatus">
+        ${['Available','Occupied','Maintenance'].map(s=>`<option ${room.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>` : ''}`;
+
+  openModal(title, html, async () => {
+    const body = {
+      roomType:     document.getElementById('f-rtype').value.trim(),
+      pricePerNight: Number(document.getElementById('f-rprice').value),
+      capacity:      Number(document.getElementById('f-rcap').value),
+    };
+    if (!room) body.roomNumber = document.getElementById('f-rnum').value.trim();
+    else body.status = document.getElementById('f-rstatus').value;
+
+    if (!body.roomType || !body.pricePerNight || !body.capacity) return modalError('Please fill in all required fields.');
+    if (!room && !body.roomNumber) return modalError('Room number is required.');
+
+    modalLoading(true);
+    try {
+      if (room) await api('PUT', `/rooms/${room._id}`, body);
+      else       await api('POST', '/rooms', body);
+      closeModal();
+      toast(room ? `Room ${room.roomNumber} updated.` : 'Room created.', 'success');
+      loadRooms();
+    } catch(e) { modalLoading(false); modalError(e.message); }
+  });
+}
+
+async function changeRoomStatus(id, num, current) {
+  const statuses = ['Available','Occupied','Maintenance'].filter(s => s !== current);
+  const html = `<div class="form-group">
+    <label>New Status for Room ${esc(num)}</label>
+    <select id="f-ns">${statuses.map(s=>`<option>${s}</option>`).join('')}</select>
+  </div>`;
+  openModal(`Change Room Status — ${num}`, html, async () => {
+    const s = document.getElementById('f-ns').value;
+    modalLoading(true);
+    try {
+      await api('PUT', `/rooms/${id}`, { status: s });
+      closeModal(); toast(`Room ${num} → ${s}`, 'success'); loadRooms();
+    } catch(e) { modalLoading(false); modalError(e.message); }
+  }, 'Update');
+}
+
+async function deleteRoom(id, num) {
+  const ok = await showConfirm('Delete Room', `Permanently delete Room "${num}"? This cannot be undone.`);
+  if (!ok) return;
+  try { await api('DELETE', `/rooms/${id}`); toast(`Room ${num} deleted.`,'success'); loadRooms(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════════════════
+//  CUSTOMERS
+// ════════════════════════════════════════════════
+let _customers = [];
+async function loadCustomers() {
+  try {
+    const r = await api('GET', '/customers');
+    _customers = r.data || [];
+    S.customers = _customers;
+    renderCustomers('');
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="no-data"><div class="nd-icon">❌</div><p>${esc(e.message)}</p></div>`;
+  }
+}
+
+function renderCustomers(filter) {
+  const data = filter ? _customers.filter(c =>
+    c.name.toLowerCase().includes(filter) ||
+    c.email.toLowerCase().includes(filter) ||
+    c.phone.includes(filter)
+  ) : _customers;
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+    <div class="section-card">
+      <div class="section-header">
+        <h2>👤 Customers <span style="color:var(--text-muted);font-weight:400;font-size:.85rem">(${data.length})</span></h2>
+        <div class="header-actions">
+          <input class="search-input" placeholder="🔍  Search customers…" id="cust-search" value="${esc(filter)}">
+          <button class="btn btn-primary" onclick="openCustomerModal(null)">➕ Add Customer</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>ID Proof</th><th>Actions</th></tr></thead>
+          <tbody>${data.length ? data.map(c => `
+            <tr>
+              <td class="td-name">${esc(c.name)}</td>
+              <td>${esc(c.email)}</td>
+              <td class="mono">${esc(c.phone)}</td>
+              <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.address)}</td>
+              <td class="mono">${esc(c.idProof)}</td>
+              <td><div class="td-actions">
+                <button class="btn btn-ghost btn-sm" onclick="openCustomerModal('${esc(c._id)}')">✏️ Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCustomer('${esc(c._id)}','${esc(c.name)}')">🗑️</button>
+              </div></td>
+            </tr>`).join('') : '<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--text-muted)">No customers found</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById('cust-search').addEventListener('input', e => renderCustomers(e.target.value.toLowerCase()));
+}
+
+function openCustomerModal(id) {
+  const c = id ? _customers.find(x => x._id === id) : null;
+  const html = `
+    <div class="form-group"><label>Full Name *</label><input id="f-cname" value="${esc(c?.name||'')}"></div>
+    <div class="form-group"><label>Email *</label><input id="f-cemail" type="email" value="${esc(c?.email||'')}"></div>
+    <div class="form-group"><label>Phone (10–15 digits) *</label><input id="f-cphone" value="${esc(c?.phone||'')}"></div>
+    <div class="form-group"><label>Address *</label><textarea id="f-caddr" rows="3">${esc(c?.address||'')}</textarea></div>
+    <div class="form-group"><label>ID Proof *</label><input id="f-cidp" value="${esc(c?.idProof||'')}" placeholder="e.g. Aadhar: 1234-5678-9012"></div>`;
+  openModal(c ? `Edit — ${c.name}` : 'Add New Customer', html, async () => {
+    const body = {
+      name:    document.getElementById('f-cname').value.trim(),
+      email:   document.getElementById('f-cemail').value.trim(),
+      phone:   document.getElementById('f-cphone').value.trim(),
+      address: document.getElementById('f-caddr').value.trim(),
+      idProof: document.getElementById('f-cidp').value.trim(),
+    };
+    if (!body.name || !body.email || !body.phone || !body.address || !body.idProof) return modalError('All fields are required.');
+    if (!/^\S+@\S+\.\S+$/.test(body.email)) return modalError('Please enter a valid email address.');
+    if (!/^[0-9]{10,15}$/.test(body.phone)) return modalError('Phone must be 10–15 digits.');
+    modalLoading(true);
+    try {
+      if (c) await api('PUT', `/customers/${c._id}`, body);
+      else    await api('POST', '/customers', body);
+      closeModal(); toast(c ? 'Customer updated.' : 'Customer created.'); loadCustomers();
+    } catch(e) { modalLoading(false); modalError(e.message); }
+  });
+}
+
+async function deleteCustomer(id, name) {
+  const ok = await showConfirm('Delete Customer', `Permanently delete "${name}"? This cannot be undone.`);
+  if (!ok) return;
+  try { await api('DELETE', `/customers/${id}`); toast(`${name} deleted.`,'success'); loadCustomers(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════════════════
+//  DEPARTMENTS
+// ════════════════════════════════════════════════
+let _depts = [];
+async function loadDepts() {
+  try {
+    const r = await api('GET', '/departments');
+    _depts = r.data || [];
+    S.depts = _depts;
+    renderDepts('');
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="no-data"><div class="nd-icon">❌</div><p>${esc(e.message)}</p></div>`;
+  }
+}
+
+function renderDepts(filter) {
+  const data = filter ? _depts.filter(d =>
+    d.name.toLowerCase().includes(filter) || d.description.toLowerCase().includes(filter)
+  ) : _depts;
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+    <div class="section-card">
+      <div class="section-header">
+        <h2>🏢 Departments <span style="color:var(--text-muted);font-weight:400;font-size:.85rem">(${data.length})</span></h2>
+        <div class="header-actions">
+          <input class="search-input" placeholder="🔍  Search departments…" id="dept-search" value="${esc(filter)}">
+          <button class="btn btn-primary" onclick="openDeptModal(null)">➕ Add Department</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Description</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody>${data.length ? data.map(d => `
+            <tr>
+              <td class="td-name">${esc(d.name)}</td>
+              <td style="max-width:300px">${esc(d.description)}</td>
+              <td class="mono">${fmtDate(d.createdAt)}</td>
+              <td><div class="td-actions">
+                <button class="btn btn-ghost btn-sm" onclick="openDeptModal('${esc(d._id)}')">✏️ Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteDept('${esc(d._id)}','${esc(d.name)}')">🗑️</button>
+              </div></td>
+            </tr>`).join('') : '<tr><td colspan="4" style="padding:32px;text-align:center;color:var(--text-muted)">No departments found</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById('dept-search').addEventListener('input', e => renderDepts(e.target.value.toLowerCase()));
+}
+
+function openDeptModal(id) {
+  const d = id ? _depts.find(x => x._id === id) : null;
+  const html = `
+    <div class="form-group"><label>Department Name *</label><input id="f-dname" value="${esc(d?.name||'')}"></div>
+    <div class="form-group"><label>Description *</label><textarea id="f-ddesc" rows="3">${esc(d?.description||'')}</textarea></div>`;
+  openModal(d ? `Edit — ${d.name}` : 'Add New Department', html, async () => {
+    const body = { name: document.getElementById('f-dname').value.trim(), description: document.getElementById('f-ddesc').value.trim() };
+    if (!body.name || !body.description) return modalError('All fields are required.');
+    modalLoading(true);
+    try {
+      if (d) await api('PUT', `/departments/${d._id}`, body);
+      else    await api('POST', '/departments', body);
+      closeModal(); toast(d ? 'Department updated.' : 'Department created.'); loadDepts();
+    } catch(e) { modalLoading(false); modalError(e.message); }
+  });
+}
+
+async function deleteDept(id, name) {
+  const ok = await showConfirm('Delete Department', `Permanently delete "${name}"? All assigned staff must be reassigned first.`);
+  if (!ok) return;
+  try { await api('DELETE', `/departments/${id}`); toast(`${name} deleted.`,'success'); loadDepts(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════════════════
+//  STAFF
+// ════════════════════════════════════════════════
+let _staff = [];
+async function loadStaff() {
+  try {
+    const [sr, dr] = await Promise.all([api('GET','/staff'), api('GET','/departments')]);
+    _staff  = sr.data || [];
+    _depts  = dr.data || [];
+    S.depts = _depts;
+    renderStaff('');
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="no-data"><div class="nd-icon">❌</div><p>${esc(e.message)}</p></div>`;
+  }
+}
+
+function renderStaff(filter) {
+  const data = filter ? _staff.filter(s =>
+    s.name.toLowerCase().includes(filter) || s.role.toLowerCase().includes(filter) ||
+    (s.department?.name||'').toLowerCase().includes(filter)
+  ) : _staff;
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+    <div class="section-card">
+      <div class="section-header">
+        <h2>👔 Staff <span style="color:var(--text-muted);font-weight:400;font-size:.85rem">(${data.length})</span></h2>
+        <div class="header-actions">
+          <input class="search-input" placeholder="🔍  Search staff…" id="staff-search" value="${esc(filter)}">
+          <button class="btn btn-primary" onclick="openStaffModal(null)">➕ Add Staff</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Salary</th><th>Actions</th></tr></thead>
+          <tbody>${data.length ? data.map(s => `
+            <tr>
+              <td class="td-name">${esc(s.name)}</td>
+              <td>${esc(s.email)}</td>
+              <td>${esc(s.role)}</td>
+              <td>${esc(s.department?.name||'—')}</td>
+              <td class="price">${fmtMoney(s.salary)}</td>
+              <td><div class="td-actions">
+                <button class="btn btn-ghost btn-sm" onclick="openStaffModal('${esc(s._id)}')">✏️ Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteStaff('${esc(s._id)}','${esc(s.name)}')">🗑️</button>
+              </div></td>
+            </tr>`).join('') : '<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--text-muted)">No staff found</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById('staff-search').addEventListener('input', e => renderStaff(e.target.value.toLowerCase()));
+}
+
+function openStaffModal(id) {
+  const s = id ? _staff.find(x => x._id === id) : null;
+  const deptOpts = _depts.map(d => `<option value="${esc(d._id)}" ${(s?.department?._id||s?.department)===d._id?'selected':''}>${esc(d.name)}</option>`).join('');
+  if (!deptOpts) return toast('Please create a department first.','error');
+  const html = `
+    <div class="form-row">
+      <div class="form-group"><label>Full Name *</label><input id="f-sname" value="${esc(s?.name||'')}"></div>
+      <div class="form-group"><label>Email *</label><input id="f-semail" type="email" value="${esc(s?.email||'')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Phone *</label><input id="f-sphone" value="${esc(s?.phone||'')}"></div>
+      <div class="form-group"><label>Role *</label><input id="f-srole" value="${esc(s?.role||'')}" placeholder="Receptionist, Manager…"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Monthly Salary (₹) *</label><input id="f-ssal" type="number" min="0" value="${s?.salary||''}"></div>
+      <div class="form-group"><label>Department *</label><select id="f-sdept"><option value="">Select…</option>${deptOpts}</select></div>
+    </div>`;
+  openModal(s ? `Edit — ${s.name}` : 'Add Staff Member', html, async () => {
+    const body = {
+      name:       document.getElementById('f-sname').value.trim(),
+      email:      document.getElementById('f-semail').value.trim(),
+      phone:      document.getElementById('f-sphone').value.trim(),
+      role:       document.getElementById('f-srole').value.trim(),
+      salary:     Number(document.getElementById('f-ssal').value),
+      department: document.getElementById('f-sdept').value,
+    };
+    if (!body.name || !body.email || !body.phone || !body.role || !body.salary || !body.department) return modalError('All fields are required.');
+    if (!/^\S+@\S+\.\S+$/.test(body.email)) return modalError('Please enter a valid email address.');
+    if (!/^[0-9]{10,15}$/.test(body.phone)) return modalError('Phone must be 10–15 digits.');
+    modalLoading(true);
+    try {
+      if (s) await api('PUT', `/staff/${s._id}`, body);
+      else    await api('POST', '/staff', body);
+      closeModal(); toast(s ? 'Staff updated.' : 'Staff member created.'); loadStaff();
+    } catch(e) { modalLoading(false); modalError(e.message); }
+  });
+}
+
+async function deleteStaff(id, name) {
+  const ok = await showConfirm('Delete Staff Member', `Permanently delete "${name}"? This cannot be undone.`);
+  if (!ok) return;
+  try { await api('DELETE', `/staff/${id}`); toast(`${name} deleted.`,'success'); loadStaff(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════════════════
+//  BOOKINGS
+// ════════════════════════════════════════════════
+let _bookings = [];
+let _bkFilter = 'All';
+
+async function loadBookings() {
+  try {
+    const r = await api('GET', '/bookings');
+    _bookings = r.data || [];
+    renderBookings();
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="no-data"><div class="nd-icon">❌</div><p>${esc(e.message)}</p></div>`;
+  }
+}
+
+function renderBookings() {
+  const all = _bookings;
+  const data = _bkFilter === 'All' ? all : all.filter(b => b.bookingStatus === _bkFilter);
+  const tabs = ['All','Booked','CheckedIn','CheckedOut','Cancelled'];
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+    <div class="section-card">
+      <div class="section-header">
+        <h2>📅 Bookings <span style="color:var(--text-muted);font-weight:400;font-size:.85rem">(${data.length})</span></h2>
+        <div class="header-actions">
+          <div class="filter-tabs" id="bk-tabs">
+            ${tabs.map(t=>`<button class="tab-btn ${_bkFilter===t?'active':''}" onclick="setBkFilter('${t}')">${t}</button>`).join('')}
+          </div>
+          <button class="btn btn-primary" onclick="openCreateBooking()">➕ New Booking</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Customer</th><th>Room</th><th>Check-In</th><th>Check-Out</th><th>Nights</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${data.length ? data.map(b => {
+    const n = nights(b.checkInDate, b.checkOutDate);
+    const st = b.bookingStatus;
+    let actions = '';
+    if (st==='Booked') actions = `
+      <button class="btn btn-ghost btn-sm" onclick="openEditBookingDates('${esc(b._id)}')">📝 Dates</button>
+      <button class="btn btn-green btn-sm" onclick="doCheckIn('${esc(b._id)}','${esc(b.customer?.name||'')}')">✅ In</button>
+      <button class="btn btn-danger btn-sm" onclick="doCancelBooking('${esc(b._id)}','${esc(b.customer?.name||'')}')">✕</button>`;
+    else if (st==='CheckedIn') actions = `
+      <button class="btn btn-blue btn-sm" onclick="doCheckOut('${esc(b._id)}','${esc(b.customer?.name||'')}')">🚪 Out</button>
+      <button class="btn btn-danger btn-sm" onclick="doCancelBooking('${esc(b._id)}','${esc(b.customer?.name||'')}')">✕</button>`;
+    return `<tr>
+      <td class="td-name">${esc(b.customer?.name||'—')}</td>
+      <td><span class="mono">${esc(b.room?.roomNumber||'—')}</span> <span style="color:var(--text-muted);font-size:.78rem">${esc(b.room?.roomType||'')}</span></td>
+      <td>${fmtDate(b.checkInDate)}</td>
+      <td>${fmtDate(b.checkOutDate)}</td>
+      <td>${n}</td>
+      <td class="price">${fmtMoney(b.totalAmount)}</td>
+      <td>${statusBadge(st)}</td>
+      <td><div class="td-actions">${actions||'<span style="color:var(--text-muted);font-size:.8rem">—</span>'}</div></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--text-muted)">No bookings found</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function setBkFilter(f) { _bkFilter = f; renderBookings(); }
+
+async function openCreateBooking() {
+  const [cr, rr] = await Promise.all([
+    api('GET', '/customers'),
+    api('GET', '/bookings/room-availability'),   // All rooms, no date filter yet
+  ]);
+  const custs = cr.data || [];
+  const rooms = rr.data || [];
+  if (!custs.length) return toast('No customers found. Add a customer first.', 'error');
+  if (!rooms.length) return toast('No rooms configured yet.', 'error');
+
+  const custOpts = custs.map(c => `<option value="${esc(c._id)}">${esc(c.name)} — ${esc(c.phone)}</option>`).join('');
+  const today = new Date().toISOString().split('T')[0];
+
+  // Store rooms in a JS variable accessible inside the modal callbacks
+  window._bkRooms = rooms;
+
+  const buildRoomOpts = (roomList) =>
+    roomList.map(r => {
+      const avail  = r.isAvailable !== false;   // default true when no dates chosen
+      const icon   = avail ? '\u2705' : '\u274C';
+      const label  = `${icon} ${r.roomNumber} (${r.roomType}) — ${fmtMoney(r.pricePerNight)}/night${!avail ? ' — Unavailable' : ''}`;
+      return `<option value="${esc(r._id)}" data-price="${r.pricePerNight}" data-avail="${avail}" ${!avail ? 'disabled' : ''}>${label}</option>`;
+    }).join('');
+
+  const html = `
+    <div class="form-group"><label>Customer *</label><select id="f-bcust"><option value="">Select customer…</option>${custOpts}</select></div>
+    <div class="form-row">
+      <div class="form-group"><label>Check-In Date *</label><input id="f-bci" type="date" min="${today}" value="${today}" onchange="refreshRoomOpts()"></div>
+      <div class="form-group"><label>Check-Out Date *</label><input id="f-bco" type="date" min="${today}" onchange="refreshRoomOpts()"></div>
+    </div>
+    <div class="form-group">
+      <label>Room * <span id="bk-avail-hint" style="font-weight:400;color:var(--text-muted);font-size:.78rem"></span></label>
+      <select id="f-broom" onchange="calcBkTotal()">
+        <option value="">Select dates first to see availability…</option>
+        ${buildRoomOpts(rooms)}
+      </select>
+    </div>
+    <div class="form-group"><label>Total Amount</label><input id="f-btotal" readonly placeholder="Select room and dates…"></div>`;
+
+  openModal('Create New Booking', html, async () => {
+    const roomSel = document.getElementById('f-broom');
+    const selOpt  = roomSel?.selectedOptions?.[0];
+    if (selOpt?.dataset?.avail === 'false') {
+      return modalError('The selected room is not available for the chosen dates. Please pick another room or different dates.');
+    }
+    const body = {
+      customer:     document.getElementById('f-bcust').value,
+      room:         roomSel?.value,
+      checkInDate:  document.getElementById('f-bci').value,
+      checkOutDate: document.getElementById('f-bco').value,
+    };
+    if (!body.customer)                        return modalError('Please select a customer.');
+    if (!body.room)                            return modalError('Please select a room.');
+    if (!body.checkInDate || !body.checkOutDate) return modalError('Both dates are required.');
+    if (body.checkOutDate <= body.checkInDate) return modalError('Check-out must be after check-in.');
+    modalLoading(true);
+    try {
+      await api('POST', '/bookings', body);
+      closeModal(); toast('Booking created successfully!'); loadBookings();
+    } catch(e) { modalLoading(false); modalError(e.message); }
+  }, 'Create Booking');
+}
+
+// Called when dates change — refreshes room dropdown with live availability
+async function refreshRoomOpts() {
+  calcBkTotal();
+  const ci = document.getElementById('f-bci')?.value;
+  const co = document.getElementById('f-bco')?.value;
+  const roomSel  = document.getElementById('f-broom');
+  const hintEl   = document.getElementById('bk-avail-hint');
+  if (!roomSel) return;
+
+  // Need both dates and checkout must be after checkin
+  if (!ci || !co || co <= ci) {
+    if (hintEl) hintEl.textContent = '';
+    return;
+  }
+
+  if (hintEl) hintEl.textContent = '(checking…)';
+  try {
+    const prevVal = roomSel.value;
+    const rr = await api('GET', `/bookings/room-availability?checkIn=${ci}&checkOut=${co}`);
+    const rooms = rr.data || [];
+    window._bkRooms = rooms;
+
+    const availCount = rooms.filter(r => r.isAvailable).length;
+    if (hintEl) hintEl.textContent = `— ${availCount} of ${rooms.length} room${rooms.length !== 1 ? 's' : ''} available`;
+
+    // Rebuild options, keeping current selection if it's still valid
+    roomSel.innerHTML = rooms.map(r => {
+      const avail  = r.isAvailable;
+      const icon   = avail ? '\u2705' : '\u274C';
+      const label  = `${icon} ${r.roomNumber} (${r.roomType}) — ${fmtMoney(r.pricePerNight)}/night${!avail ? ' — Unavailable' : ''}`;
+      return `<option value="${esc(r._id)}" data-price="${r.pricePerNight}" data-avail="${avail}" ${!avail ? 'disabled' : ''} ${prevVal === r._id && avail ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+
+    calcBkTotal();
+  } catch(e) {
+    if (hintEl) hintEl.textContent = '(availability check failed)';
+  }
+}
+
+function calcBkTotal() {
+  const rSel = document.getElementById('f-broom');
+  const ci   = document.getElementById('f-bci')?.value;
+  const co   = document.getElementById('f-bco')?.value;
+  const inp  = document.getElementById('f-btotal');
+  if (!inp) return;
+  if (!ci || !co || co <= ci) { inp.value = ''; return; }
+  const price = Number(rSel?.selectedOptions?.[0]?.dataset?.price || 0);
+  const n     = nights(ci, co);
+  inp.value   = n > 0 && price > 0 ? `₹${(n*price).toLocaleString('en-IN')} (${n} night${n>1?'s':''} × ${fmtMoney(price)})` : '';
+}
+
+function openEditBookingDates(id) {
+  const b = _bookings.find(x => x._id === id);
+  if (!b) return;
+  const ci = b.checkInDate?.split('T')[0] || '';
+  const co = b.checkOutDate?.split('T')[0] || '';
+  const html = `
+    <p style="margin-bottom:16px;color:var(--text-muted);font-size:.85rem">Customer: <strong style="color:var(--text)">${esc(b.customer?.name)}</strong> | Room: <strong style="color:var(--text)">${esc(b.room?.roomNumber)}</strong></p>
+    <div class="form-row">
+      <div class="form-group"><label>Check-In Date *</label><input id="f-eci" type="date" value="${ci}"></div>
+      <div class="form-group"><label>Check-Out Date *</label><input id="f-eco" type="date" value="${co}"></div>
+    </div>`;
+  openModal('Edit Booking Dates', html, async () => {
+    const ci2 = document.getElementById('f-eci').value;
+    const co2 = document.getElementById('f-eco').value;
+    if (!ci2 || !co2) return modalError('Both dates are required.');
+    if (co2 <= ci2)   return modalError('Check-out must be after check-in.');
+    modalLoading(true);
+    try {
+      await api('PUT', `/bookings/${id}`, { checkInDate: ci2, checkOutDate: co2 });
+      closeModal(); toast('Booking dates updated.'); loadBookings();
+    } catch(e) { modalLoading(false); modalError(e.message); }
+  }, 'Update Dates');
+}
+
+async function doCheckIn(id, name) {
+  const ok = await showConfirm('Check In', `Check in "${name}"?`, '✅', 'Check In', false);
+  if (!ok) return;
+  try { await api('PATCH', `/bookings/${id}/checkin`); toast(`${name} checked in.`,'success'); loadBookings(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+async function doCheckOut(id, name) {
+  const ok = await showConfirm('Check Out', `Check out "${name}"?`, '🚪', 'Check Out', false);
+  if (!ok) return;
+  try { await api('PATCH', `/bookings/${id}/checkout`); toast(`${name} checked out.`,'success'); loadBookings(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+async function doCancelBooking(id, name) {
+  const ok = await showConfirm('Cancel Booking', `Cancel booking for "${name}"? This cannot be undone.`);
+  if (!ok) return;
+  try { await api('DELETE', `/bookings/${id}`); toast('Booking cancelled.','success'); loadBookings(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+checkAuth();
+</script>
+</body>
+</html>

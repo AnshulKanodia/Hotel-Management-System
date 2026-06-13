@@ -72,6 +72,10 @@ const RoomSchema = new Schema<IRoom>(
   }
 );
 
+// ─── Index ───────────────────────────────────────────────────
+/** Speeds up status-based filtering (availability queries, dashboard) */
+RoomSchema.index({ status: 1 });
+
 const Room = model<IRoom>('Room', RoomSchema);
 
 export default Room;

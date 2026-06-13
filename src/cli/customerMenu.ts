@@ -188,6 +188,7 @@ const deleteCustomer = async (): Promise<void> => {
   const selectedId = await select<string>({
     message: 'Select customer to delete:',
     choices,
+    loop: false,
     pageSize: 10,
   });
 
@@ -269,6 +270,7 @@ export const customerMenu = async (): Promise<void> => {
 
     const choice = await select<CustomerMenuChoice>({
       message: '👤  Customer Management — choose an action:',
+      loop: false,
       choices: [
         { name: '📋  View All Customers', value: 'view'   },
         { name: '➕  Add New Customer',   value: 'add'    },

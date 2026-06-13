@@ -86,6 +86,7 @@ const viewRoomsByStatus = async (): Promise<void> => {
 
   const statusChoice = await select<RoomStatus | 'back'>({
     message: 'Filter by status:',
+    loop: false,
     choices: [
       { name: '🟢  Available',    value: RoomStatus.Available   },
       { name: '🔴  Occupied',     value: RoomStatus.Occupied    },
@@ -157,6 +158,7 @@ const addRoom = async (): Promise<void> => {
 
   const status = await select<RoomStatus>({
     message: 'Initial Status:',
+    loop: false,
     choices: [
       { name: '🟢  Available',   value: RoomStatus.Available   },
       { name: '🟡  Maintenance', value: RoomStatus.Maintenance },
@@ -223,6 +225,7 @@ const updateRoomStatus = async (): Promise<void> => {
   const selectedId = await select<string>({
     message: 'Select room to update:',
     choices: roomChoices,
+    loop: false,
     pageSize: 12,
   });
 
@@ -242,6 +245,7 @@ const updateRoomStatus = async (): Promise<void> => {
 
   const newStatus = await select<RoomStatus>({
     message: `Current: ${statusBadge(room.status)}  →  Change to:`,
+    loop: false,
     choices: newStatusChoices,
   });
 
@@ -291,6 +295,7 @@ const deleteRoom = async (): Promise<void> => {
   const selectedId = await select<string>({
     message: 'Select room to delete:',
     choices,
+    loop: false,
     pageSize: 12,
   });
 
@@ -362,6 +367,7 @@ export const roomMenu = async (): Promise<void> => {
 
     const choice = await select<RoomMenuChoice>({
       message: '🛏️   Room Management — choose an action:',
+      loop: false,
       choices: [
         { name: '📋  View All Rooms',        value: 'view'         },
         { name: '🔍  View Rooms by Status',   value: 'viewByStatus' },

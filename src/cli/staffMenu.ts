@@ -103,6 +103,7 @@ const viewStaffByDept = async (): Promise<void> => {
 
   const selectedDeptId = await select<string>({
     message: 'Select department:',
+    loop: false,
     choices: deptChoices,
   });
 
@@ -194,6 +195,7 @@ const addStaff = async (): Promise<void> => {
 
   const departmentId = await select<string>({
     message: 'Assign to Department:',
+    loop: false,
     choices: deptChoices,
   });
 
@@ -271,6 +273,7 @@ const deleteStaff = async (): Promise<void> => {
   const selectedId = await select<string>({
     message: 'Select staff member to delete:',
     choices,
+    loop: false,
     pageSize: 12,
   });
 
@@ -331,6 +334,7 @@ export const staffMenu = async (): Promise<void> => {
 
     const choice = await select<StaffMenuChoice>({
       message: '👔  Staff Management — choose an action:',
+      loop: false,
       choices: [
         { name: '📋  View All Staff',          value: 'view'       },
         { name: '🔍  View Staff by Department', value: 'viewByDept' },

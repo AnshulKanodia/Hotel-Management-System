@@ -454,6 +454,7 @@ const showCustomerHistory = async (): Promise<void> => {
   const customerId = await select<string>({
     message: 'Select customer:',
     choices,
+    loop: false,
     pageSize: 10,
   });
 
@@ -550,6 +551,7 @@ export const reportMenu = async (): Promise<void> => {
 
     const choice = await select<ReportMenuChoice>({
       message: '📊  Reports & Analytics — choose a report:',
+      loop: false,
       choices: [
         { name: '🏠  Hotel Dashboard Summary',        value: 'dashboard'       },
         { name: '🛏️   Room Status Report',             value: 'roomStatus'      },

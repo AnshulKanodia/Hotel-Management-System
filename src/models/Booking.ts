@@ -83,6 +83,20 @@ BookingSchema.pre('validate', function () {
   }
 });
 
+// ─── Indexes ───────────────────────────────────────────────
+/**
+ * Compound index for the conflict-detection query in BookingController:
+ *   { room, bookingStatus, checkInDate, checkOutDate }
+ * Without this, every booking creation does a full collection scan.
+ */
+BookingSchema.index({ room: 1, bookingStatus: 1, checkInDate: 1, checkOutDate: 1 });
+
+/** For customer booking history and deletion guard */
+BookingSchema.index({ customer: 1, bookingStatus: 1 });
+
+/** For filtering/counting by status (reports, dashboard) */
+BookingSchema.index({ bookingStatus: 1 });
+
 const Booking = model<IBooking>('Booking', BookingSchema);
 
 export default Booking;

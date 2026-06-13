@@ -111,14 +111,18 @@ export const createBooking = asyncHandler(
       throw new AppError('Customer not found. Please provide a valid customer ID.', 404);
     }
 
-    // ── 2. Room must exist and be Available ────────────────
+    // ── 2. Room must exist ─────────────────────────────────
+    // Note: We do NOT block on room.status here because a room can be
+    // "Occupied" for one date range yet fully free for another. The
+    // authoritative check is the date-overlap query in step 4.
+    // We only reject if the room is under Maintenance (truly unavailable).
     const roomDoc = await Room.findById(room);
     if (!roomDoc) {
       throw new AppError('Room not found. Please provide a valid room ID.', 404);
     }
-    if (roomDoc.status !== RoomStatus.Available) {
+    if (roomDoc.status === RoomStatus.Maintenance) {
       throw new AppError(
-        `Room "${roomDoc.roomNumber}" is currently ${roomDoc.status} and cannot be booked.`,
+        `Room "${roomDoc.roomNumber}" is under maintenance and cannot be booked at this time.`,
         400
       );
     }
@@ -164,6 +168,68 @@ export const createBooking = asyncHandler(
         ...populated?.toObject(),
         nights,
       },
+    });
+  }
+);
+
+// ══════════════════════════════════════════════════════════
+//  GET /api/bookings/room-availability
+// ══════════════════════════════════════════════════════════
+/**
+ * getRoomAvailability
+ * Query params: checkIn (YYYY-MM-DD), checkOut (YYYY-MM-DD)
+ *
+ * Returns ALL rooms with an extra `isAvailable` flag indicating
+ * whether that room has any active booking overlapping the
+ * requested date window. Maintenance rooms are always unavailable.
+ *
+ * Used by the admin panel to show real-time per-room availability
+ * without hiding any rooms from the dropdown.
+ */
+export const getRoomAvailability = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { checkIn: ci, checkOut: co } = req.query as { checkIn?: string; checkOut?: string };
+
+    // Fetch all non-deleted rooms
+    const allRooms = await Room.find().sort({ roomNumber: 1 });
+
+    // If no dates provided, return all rooms with a basic availability flag
+    if (!ci || !co) {
+      res.status(200).json({
+        success: true,
+        message: 'Rooms retrieved (no date filter applied)',
+        data: allRooms.map(r => ({ ...r.toObject(), isAvailable: r.status !== RoomStatus.Maintenance })),
+      });
+      return;
+    }
+
+    const checkIn  = new Date(ci);
+    const checkOut = new Date(co);
+
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+      throw new AppError('Invalid date format. Use YYYY-MM-DD.', 400);
+    }
+    if (checkOut <= checkIn) {
+      throw new AppError('checkOut must be after checkIn.', 400);
+    }
+
+    // Find all active bookings overlapping the requested window
+    const conflicting = await Booking.find({
+      bookingStatus: { $in: [BookingStatus.Booked, BookingStatus.CheckedIn] },
+      checkInDate:  { $lt: checkOut },
+      checkOutDate: { $gt: checkIn },
+    }).select('room');
+
+    const bookedRoomIds = new Set(conflicting.map(b => String(b.room)));
+
+    res.status(200).json({
+      success: true,
+      message: 'Room availability retrieved',
+      data: allRooms.map(r => ({
+        ...r.toObject(),
+        // Maintenance rooms never bookable; others: check date conflicts
+        isAvailable: r.status !== RoomStatus.Maintenance && !bookedRoomIds.has(String(r._id)),
+      })),
     });
   }
 );
@@ -360,6 +426,27 @@ export const checkIn = asyncHandler(
       throw new AppError(
         `Check-in is only allowed for bookings with status "Booked". Current status: "${booking.bookingStatus}".`,
         400
+      );
+    }
+
+    // ── Physical occupancy guard ───────────────────────────
+    // Even if this booking's dates don't overlap with another booking's dates,
+    // we cannot let two guests share the same physical room simultaneously.
+    // If a previous guest is still marked CheckedIn (they never formally checked
+    // out — even if their scheduled dates are in the past), block this check-in
+    // until the prior guest is formally checked out in the system.
+    const alreadyCheckedIn = await Booking.findOne({
+      room: booking.room,
+      bookingStatus: BookingStatus.CheckedIn,
+      _id: { $ne: booking._id },
+    });
+
+    if (alreadyCheckedIn) {
+      throw new AppError(
+        `Cannot check in: another guest is currently checked into this room ` +
+        `(booking #${String(alreadyCheckedIn._id).slice(-6).toUpperCase()}). ` +
+        `Please check out the current guest first before checking in a new one.`,
+        409
       );
     }
 

@@ -158,6 +158,7 @@ const deleteDepartment = async (): Promise<void> => {
   const selectedId = await select<string>({
     message: 'Select department to delete:',
     choices,
+    loop: false,
     pageSize: 10,
   });
 
@@ -232,6 +233,7 @@ export const departmentMenu = async (): Promise<void> => {
 
     const choice = await select<DepartmentMenuChoice>({
       message: '🏢  Department Management — choose an action:',
+      loop: false,
       choices: [
         { name: '📋  View All Departments', value: 'view'   },
         { name: '➕  Add New Department',   value: 'add'    },
