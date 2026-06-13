@@ -1,27 +1,18 @@
-import inquirer from 'inquirer';
+import { select, input, confirm, Separator } from '@inquirer/prompts';
 import Customer, { ICustomer } from '../models/Customer';
 
 /**
  * customerMenu
  * ─────────────
  * Interactive CLI module for Customer Management.
- * Loops until the user selects "Back to Main Menu".
- *
- * Features:
- *   1. View All Customers   — table display of every customer
- *   2. Add Customer         — prompted form, validated, saved to MongoDB
- *   3. Delete Customer      — pick from list, confirm, soft-guard active bookings
- *
- * All DB operations reuse the existing Customer Mongoose model directly.
- * No HTTP calls — the CLI talks to MongoDB the same way the API does.
+ * Uses the modern @inquirer/prompts standalone API (Inquirer v9+).
  *
  * File location: src/cli/customerMenu.ts
  */
 
-// ─── Sub-menu Choice Type ──────────────────────────────────
 type CustomerMenuChoice = 'view' | 'add' | 'delete' | 'back';
 
-// ─── Section Header Helper ─────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────
 const printHeader = (title: string): void => {
   console.log();
   console.log('─'.repeat(50));
@@ -30,26 +21,13 @@ const printHeader = (title: string): void => {
   console.log();
 };
 
-// ─── Pause Helper ──────────────────────────────────────────
-const pause = (): Promise<void> =>
-  inquirer
-    .prompt([
-      {
-        type: 'input',
-        name: '_',
-        message: 'Press Enter to continue...',
-      },
-    ])
-    .then(() => undefined);
+const pause = async (): Promise<void> => {
+  await input({ message: 'Press Enter to continue...' });
+};
 
 // ══════════════════════════════════════════════════════════
 //  FEATURE 1 — View All Customers
 // ══════════════════════════════════════════════════════════
-/**
- * viewCustomers
- * Fetches all customers from MongoDB, sorted by name,
- * and prints them as a formatted table in the terminal.
- */
 const viewCustomers = async (): Promise<void> => {
   printHeader('All Customers');
 
@@ -61,7 +39,6 @@ const viewCustomers = async (): Promise<void> => {
     return;
   }
 
-  // Print column headers
   console.log(
     `  ${'#'.padEnd(4)} ${'Name'.padEnd(22)} ${'Email'.padEnd(28)} ${'Phone'.padEnd(16)} ID Proof`
   );
@@ -69,7 +46,6 @@ const viewCustomers = async (): Promise<void> => {
     `  ${'─'.repeat(4)} ${'─'.repeat(22)} ${'─'.repeat(28)} ${'─'.repeat(16)} ${'─'.repeat(20)}`
   );
 
-  // Print each customer row
   customers.forEach((c: ICustomer, i: number) => {
     console.log(
       `  ${String(i + 1).padEnd(4)} ${c.name.slice(0, 21).padEnd(22)} ${c.email
@@ -88,105 +64,72 @@ const viewCustomers = async (): Promise<void> => {
 // ══════════════════════════════════════════════════════════
 //  FEATURE 2 — Add Customer
 // ══════════════════════════════════════════════════════════
-/**
- * addCustomer
- * Collects all required customer fields via Inquirer prompts,
- * validates them inline, and saves a new Customer document.
- *
- * Validation strategy:
- *   - Each prompt has a `validate` function that mirrors the Mongoose
- *     schema rules so the user gets instant feedback instead of a
- *     server-side error after the full form is submitted.
- *   - Duplicate email is checked against the DB before insert.
- */
 const addCustomer = async (): Promise<void> => {
   printHeader('Add New Customer');
 
-  const answers = await inquirer.prompt<{
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-    idProof: string;
-  }>([
-    {
-      type: 'input',
-      name: 'name',
-      message: 'Full Name:',
-      validate: (v: string) => {
-        if (!v.trim()) return 'Name is required.';
-        if (v.trim().length > 100) return 'Name cannot exceed 100 characters.';
-        return true;
-      },
-      filter: (v: string) => v.trim(),
+  // ── Collect fields one by one with inline validation ────
+  const name = await input({
+    message: 'Full Name:',
+    validate: (v) => {
+      if (!v.trim()) return 'Name is required.';
+      if (v.trim().length > 100) return 'Name cannot exceed 100 characters.';
+      return true;
     },
-    {
-      type: 'input',
-      name: 'email',
-      message: 'Email Address:',
-      validate: async (v: string) => {
-        if (!v.trim()) return 'Email is required.';
-        if (!/^\S+@\S+\.\S+$/.test(v.trim())) return 'Please enter a valid email address.';
-        // Live duplicate check against MongoDB
-        const exists = await Customer.findOne({ email: v.trim().toLowerCase() });
-        if (exists) return `Email "${v.trim()}" is already registered.`;
-        return true;
-      },
-      filter: (v: string) => v.trim().toLowerCase(),
-    },
-    {
-      type: 'input',
-      name: 'phone',
-      message: 'Phone Number (10–15 digits):',
-      validate: (v: string) => {
-        if (!v.trim()) return 'Phone number is required.';
-        if (!/^[0-9]{10,15}$/.test(v.trim())) return 'Enter a valid phone number (10–15 digits, numbers only).';
-        return true;
-      },
-      filter: (v: string) => v.trim(),
-    },
-    {
-      type: 'input',
-      name: 'address',
-      message: 'Address:',
-      validate: (v: string) => {
-        if (!v.trim()) return 'Address is required.';
-        if (v.trim().length > 300) return 'Address cannot exceed 300 characters.';
-        return true;
-      },
-      filter: (v: string) => v.trim(),
-    },
-    {
-      type: 'input',
-      name: 'idProof',
-      message: 'ID Proof (e.g. Aadhar: 1234-5678-9012):',
-      validate: (v: string) => {
-        if (!v.trim()) return 'ID Proof is required.';
-        if (v.trim().length > 100) return 'ID Proof cannot exceed 100 characters.';
-        return true;
-      },
-      filter: (v: string) => v.trim(),
-    },
-  ]);
+  });
 
-  // ── Confirm before saving ────────────────────────────────
+  const email = await input({
+    message: 'Email Address:',
+    validate: async (v) => {
+      if (!v.trim()) return 'Email is required.';
+      if (!/^\S+@\S+\.\S+$/.test(v.trim())) return 'Please enter a valid email address.';
+      const exists = await Customer.findOne({ email: v.trim().toLowerCase() });
+      if (exists) return `Email "${v.trim()}" is already registered.`;
+      return true;
+    },
+  });
+
+  const phone = await input({
+    message: 'Phone Number (10–15 digits):',
+    validate: (v) => {
+      if (!v.trim()) return 'Phone number is required.';
+      if (!/^[0-9]{10,15}$/.test(v.trim()))
+        return 'Enter a valid phone number (10–15 digits, numbers only).';
+      return true;
+    },
+  });
+
+  const address = await input({
+    message: 'Address:',
+    validate: (v) => {
+      if (!v.trim()) return 'Address is required.';
+      if (v.trim().length > 300) return 'Address cannot exceed 300 characters.';
+      return true;
+    },
+  });
+
+  const idProof = await input({
+    message: 'ID Proof (e.g. Aadhar: 1234-5678-9012):',
+    validate: (v) => {
+      if (!v.trim()) return 'ID Proof is required.';
+      if (v.trim().length > 100) return 'ID Proof cannot exceed 100 characters.';
+      return true;
+    },
+  });
+
+  // ── Review summary ───────────────────────────────────────
   console.log();
   console.log('  📋  Review Details:');
-  console.log(`      Name    : ${answers.name}`);
-  console.log(`      Email   : ${answers.email}`);
-  console.log(`      Phone   : ${answers.phone}`);
-  console.log(`      Address : ${answers.address}`);
-  console.log(`      ID Proof: ${answers.idProof}`);
+  console.log(`      Name    : ${name.trim()}`);
+  console.log(`      Email   : ${email.trim().toLowerCase()}`);
+  console.log(`      Phone   : ${phone.trim()}`);
+  console.log(`      Address : ${address.trim()}`);
+  console.log(`      ID Proof: ${idProof.trim()}`);
   console.log();
 
-  const { confirmed } = await inquirer.prompt<{ confirmed: boolean }>([
-    {
-      type: 'confirm',
-      name: 'confirmed',
-      message: 'Save this customer?',
-      default: true,
-    },
-  ]);
+  const confirmed = await confirm({
+    message: 'Save this customer?',
+    default: true,
+  });
 
   if (!confirmed) {
     console.log('\n  ℹ️   Customer creation cancelled.\n');
@@ -194,16 +137,22 @@ const addCustomer = async (): Promise<void> => {
     return;
   }
 
-  // ── Save to MongoDB ──────────────────────────────────────
+  // ── Save ─────────────────────────────────────────────────
   try {
-    const customer = await Customer.create(answers);
+    const customer = await Customer.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone.trim(),
+      address: address.trim(),
+      idProof: idProof.trim(),
+    });
     console.log();
     console.log(`  ✅  Customer "${customer.name}" created successfully!`);
     console.log(`      ID: ${customer._id}`);
     console.log();
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`\n  ❌  Failed to create customer: ${error.message}\n`);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.log(`\n  ❌  Failed to create customer: ${err.message}\n`);
     }
   }
 
@@ -213,15 +162,6 @@ const addCustomer = async (): Promise<void> => {
 // ══════════════════════════════════════════════════════════
 //  FEATURE 3 — Delete Customer
 // ══════════════════════════════════════════════════════════
-/**
- * deleteCustomer
- * Presents a searchable list of all customers to pick from.
- * Requires a double confirmation (select + confirm prompt)
- * to prevent accidental deletions.
- *
- * Guard: if the customer has any bookings (Booked or CheckedIn),
- * deletion is blocked with a clear message.
- */
 const deleteCustomer = async (): Promise<void> => {
   printHeader('Delete Customer');
 
@@ -233,24 +173,23 @@ const deleteCustomer = async (): Promise<void> => {
     return;
   }
 
-  // Build choice list for the selector
-  const choices = customers.map((c: ICustomer) => ({
+  // Build choice list
+  const choices: (
+    | { name: string; value: string }
+    | InstanceType<typeof Separator>
+  )[] = customers.map((c: ICustomer) => ({
     name: `${c.name}  <${c.email}>  ${c.phone}`,
-    value: c._id.toString(),
+    value: (c._id as { toString(): string }).toString(),
   }));
 
-  choices.push(new inquirer.Separator('─────────────────────') as never);
+  choices.push(new Separator('─────────────────────'));
   choices.push({ name: '↩  Cancel — go back', value: 'cancel' });
 
-  const { selectedId } = await inquirer.prompt<{ selectedId: string }>([
-    {
-      type: 'list',
-      name: 'selectedId',
-      message: 'Select customer to delete:',
-      choices,
-      pageSize: 10,
-    },
-  ]);
+  const selectedId = await select<string>({
+    message: 'Select customer to delete:',
+    choices,
+    pageSize: 10,
+  });
 
   if (selectedId === 'cancel') {
     console.log('\n  ℹ️   Deletion cancelled.\n');
@@ -258,16 +197,14 @@ const deleteCustomer = async (): Promise<void> => {
     return;
   }
 
-  // ── Fetch fresh document for confirmation display ────────
   const customer = await Customer.findById(selectedId);
   if (!customer) {
-    console.log('\n  ❌  Customer not found (may have been deleted already).\n');
+    console.log('\n  ❌  Customer not found.\n');
     await pause();
     return;
   }
 
-  // ── Guard: block deletion if active bookings exist ───────
-  // Lazy import to avoid circular deps at module load time
+  // ── Active booking guard ─────────────────────────────────
   const Booking = (await import('../models/Booking')).default;
   const { BookingStatus } = await import('../models/Booking');
 
@@ -286,22 +223,18 @@ const deleteCustomer = async (): Promise<void> => {
     return;
   }
 
-  // ── Double-confirm before permanent deletion ─────────────
+  // ── Double-confirm ───────────────────────────────────────
   console.log();
-  console.log(`  ⚠️   You are about to permanently delete:`);
+  console.log('  ⚠️   You are about to permanently delete:');
   console.log(`      Name  : ${customer.name}`);
   console.log(`      Email : ${customer.email}`);
   console.log(`      Phone : ${customer.phone}`);
   console.log();
 
-  const { confirmed } = await inquirer.prompt<{ confirmed: boolean }>([
-    {
-      type: 'confirm',
-      name: 'confirmed',
-      message: `Delete "${customer.name}" permanently? This cannot be undone.`,
-      default: false,       // default to No — safer
-    },
-  ]);
+  const confirmed = await confirm({
+    message: `Delete "${customer.name}" permanently? This cannot be undone.`,
+    default: false,
+  });
 
   if (!confirmed) {
     console.log('\n  ℹ️   Deletion cancelled.\n');
@@ -309,13 +242,13 @@ const deleteCustomer = async (): Promise<void> => {
     return;
   }
 
-  // ── Perform deletion ─────────────────────────────────────
+  // ── Delete ───────────────────────────────────────────────
   try {
     await Customer.findByIdAndDelete(selectedId);
     console.log(`\n  ✅  Customer "${customer.name}" deleted successfully.\n`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`\n  ❌  Failed to delete customer: ${error.message}\n`);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.log(`\n  ❌  Failed to delete: ${err.message}\n`);
     }
   }
 
@@ -334,34 +267,22 @@ export const customerMenu = async (): Promise<void> => {
     console.log('       🏨  HOTEL MANAGEMENT SYSTEM  🏨');
     console.log('='.repeat(50));
 
-    const { choice } = await inquirer.prompt<{ choice: CustomerMenuChoice }>([
-      {
-        type: 'list',
-        name: 'choice',
-        message: '👤  Customer Management — choose an action:',
-        choices: [
-          { name: '📋  View All Customers', value: 'view'   },
-          { name: '➕  Add New Customer',   value: 'add'    },
-          { name: '🗑️   Delete Customer',    value: 'delete' },
-          new inquirer.Separator('─────────────────────'),
-          { name: '↩   Back to Main Menu',  value: 'back'   },
-        ],
-      },
-    ]);
+    const choice = await select<CustomerMenuChoice>({
+      message: '👤  Customer Management — choose an action:',
+      choices: [
+        { name: '📋  View All Customers', value: 'view'   },
+        { name: '➕  Add New Customer',   value: 'add'    },
+        { name: '🗑️   Delete Customer',    value: 'delete' },
+        new Separator('─────────────────────'),
+        { name: '↩   Back to Main Menu',  value: 'back'   },
+      ],
+    });
 
     switch (choice) {
-      case 'view':
-        await viewCustomers();
-        break;
-      case 'add':
-        await addCustomer();
-        break;
-      case 'delete':
-        await deleteCustomer();
-        break;
-      case 'back':
-        inMenu = false;
-        break;
+      case 'view':   await viewCustomers();  break;
+      case 'add':    await addCustomer();    break;
+      case 'delete': await deleteCustomer(); break;
+      case 'back':   inMenu = false;         break;
     }
   }
 };

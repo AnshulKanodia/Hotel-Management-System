@@ -1,13 +1,16 @@
-import inquirer from 'inquirer';
-import { customerMenu } from './customerMenu';
+import { select, Separator } from '@inquirer/prompts';
 
 /**
  * mainMenu
  * ─────────
  * Top-level navigation loop for the Hotel Management CLI.
+ * Uses the modern @inquirer/prompts standalone API (Inquirer v9+).
+ * `select` replaces the old `type: 'list'` prompt.
  *
  * File location: src/cli/mainMenu.ts
  */
+
+import { customerMenu } from './customerMenu';
 
 type MainMenuChoice =
   | 'departments'
@@ -27,10 +30,10 @@ const printBanner = (): void => {
   console.log();
 };
 
-const pause = (): Promise<void> =>
-  inquirer
-    .prompt([{ type: 'input', name: '_', message: 'Press Enter to return to the main menu...' }])
-    .then(() => undefined);
+const pause = async (): Promise<void> => {
+  const { input } = await import('@inquirer/prompts');
+  await input({ message: 'Press Enter to return to the main menu...' });
+};
 
 export const mainMenu = async (): Promise<void> => {
   let running = true;
@@ -38,23 +41,19 @@ export const mainMenu = async (): Promise<void> => {
   while (running) {
     printBanner();
 
-    const { choice } = await inquirer.prompt<{ choice: MainMenuChoice }>([
-      {
-        type: 'list',
-        name: 'choice',
-        message: '📋  What would you like to manage?',
-        choices: [
-          { name: '🏢  Departments', value: 'departments' },
-          { name: '👤  Customers',   value: 'customers'   },
-          { name: '👔  Staff',       value: 'staff'       },
-          { name: '🛏️   Rooms',       value: 'rooms'       },
-          { name: '📅  Bookings',    value: 'bookings'    },
-          { name: '📊  Reports',     value: 'reports'     },
-          new inquirer.Separator('─────────────────────'),
-          { name: '🚪  Exit',        value: 'exit'        },
-        ],
-      },
-    ]);
+    const choice = await select<MainMenuChoice>({
+      message: '📋  What would you like to manage?',
+      choices: [
+        { name: '🏢  Departments', value: 'departments' },
+        { name: '👤  Customers',   value: 'customers'   },
+        { name: '👔  Staff',       value: 'staff'       },
+        { name: '🛏️   Rooms',       value: 'rooms'       },
+        { name: '📅  Bookings',    value: 'bookings'    },
+        { name: '📊  Reports',     value: 'reports'     },
+        new Separator('─────────────────────'),
+        { name: '🚪  Exit',        value: 'exit'        },
+      ],
+    });
 
     switch (choice) {
       case 'departments':
@@ -63,7 +62,6 @@ export const mainMenu = async (): Promise<void> => {
         break;
 
       case 'customers':
-        // ✅ Phase 6.2 — fully implemented
         await customerMenu();
         break;
 

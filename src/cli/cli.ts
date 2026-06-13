@@ -8,8 +8,7 @@ import { mainMenu } from './mainMenu';
  * cli.ts
  * ───────
  * Entry point for the CLI runner.
- * Connects to MongoDB Atlas first (same as the API server),
- * then hands control to the interactive mainMenu loop.
+ * Connects to MongoDB Atlas first, then starts the interactive mainMenu loop.
  *
  * Run with:  npm run cli
  *
