@@ -406,7 +406,7 @@ export const getRevenueReport = asyncHandler(
  */
 export const getCustomerBookingHistory = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { customerId } = req.params;
+    const customerId = String(req.params.customerId);
 
     // Validate ObjectId format before running aggregation
     if (!mongoose.Types.ObjectId.isValid(customerId)) {

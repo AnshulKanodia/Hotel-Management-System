@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Booking, { BookingStatus } from '../models/Booking';
+import Booking, { BookingStatus, IBooking } from '../models/Booking';
 import Room, { RoomStatus } from '../models/Room';
 import Customer from '../models/Customer';
 import asyncHandler from '../middlewares/asyncHandler';
@@ -32,7 +32,7 @@ import { AppError } from '../middlewares/errorHandler';
 const populateBooking = (query: ReturnType<typeof Booking.findById | typeof Booking.findOne>) =>
   query
     .populate('customer', 'name email phone')
-    .populate('room', 'roomNumber roomType pricePerNight status');
+    .populate('room', 'roomNumber roomType pricePerNight status') as Promise<IBooking | null>;
 
 // ─── Helper: Date Diff in Nights ──────────────────────────
 /**
@@ -266,7 +266,7 @@ export const updateBooking = asyncHandler(
       String(existing.room),
       checkIn,
       checkOut,
-      req.params.id
+      String(req.params.id)
     );
 
     // ── 4. Recalculate total ───────────────────────────────

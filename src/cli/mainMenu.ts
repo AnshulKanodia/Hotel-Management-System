@@ -1,8 +1,10 @@
 import { select, input, Separator } from '@inquirer/prompts';
-import { customerMenu } from './customerMenu';
-import { roomMenu }     from './roomMenu';
-import { staffMenu }    from './staffMenu';
-import { bookingMenu }  from './bookingMenu';
+import { customerMenu }   from './customerMenu';
+import { roomMenu }       from './roomMenu';
+import { staffMenu }      from './staffMenu';
+import { bookingMenu }    from './bookingMenu';
+import { departmentMenu } from './departmentMenu';
+import { reportMenu }     from './reportMenu';
 
 /**
  * mainMenu
@@ -31,6 +33,8 @@ const printBanner = (): void => {
   console.log();
 };
 
+// pause is available for future use — suppress unused-var lint if needed
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const pause = async (): Promise<void> => {
   await input({ message: 'Press Enter to return to the main menu...' });
 };
@@ -57,29 +61,27 @@ export const mainMenu = async (): Promise<void> => {
 
     switch (choice) {
       case 'departments':
-        console.log('\n🏢  Department management — coming soon\n');
-        await pause();
+        await departmentMenu();  // ✅ Fully implemented
         break;
 
       case 'customers':
-        await customerMenu();   // ✅ Phase 6.2
+        await customerMenu();    // ✅ Phase 6.2
         break;
 
       case 'staff':
-        await staffMenu();      // ✅ Phase 6.3
+        await staffMenu();       // ✅ Phase 6.3
         break;
 
       case 'rooms':
-        await roomMenu();       // ✅ Phase 6.3
+        await roomMenu();        // ✅ Phase 6.3
         break;
 
       case 'bookings':
-        await bookingMenu();    // ✅ Phase 6.4
+        await bookingMenu();     // ✅ Phase 6.4
         break;
 
       case 'reports':
-        console.log('\n📊  Reports & Analytics — coming soon\n');
-        await pause();
+        await reportMenu();      // ✅ Fully implemented
         break;
 
       case 'exit':

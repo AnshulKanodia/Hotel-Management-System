@@ -75,7 +75,7 @@ export const getAllRooms = asyncHandler(
  */
 export const getRoomsByStatus = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { status } = req.params;
+    const status = String(req.params.status);
 
     // Validate the status value against the enum
     const validStatuses = Object.values(RoomStatus);
@@ -86,7 +86,7 @@ export const getRoomsByStatus = asyncHandler(
       );
     }
 
-    const rooms = await Room.find({ status }).sort({ roomNumber: 1 });
+    const rooms = await Room.find({ status: status as RoomStatus }).sort({ roomNumber: 1 });
 
     res.status(200).json({
       success: true,
