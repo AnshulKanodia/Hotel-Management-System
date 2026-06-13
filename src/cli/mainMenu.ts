@@ -1,16 +1,17 @@
-import { select, Separator } from '@inquirer/prompts';
+import { select, input, Separator } from '@inquirer/prompts';
+import { customerMenu } from './customerMenu';
+import { roomMenu }     from './roomMenu';
+import { staffMenu }    from './staffMenu';
+import { bookingMenu }  from './bookingMenu';
 
 /**
  * mainMenu
  * ─────────
  * Top-level navigation loop for the Hotel Management CLI.
  * Uses the modern @inquirer/prompts standalone API (Inquirer v9+).
- * `select` replaces the old `type: 'list'` prompt.
  *
  * File location: src/cli/mainMenu.ts
  */
-
-import { customerMenu } from './customerMenu';
 
 type MainMenuChoice =
   | 'departments'
@@ -31,7 +32,6 @@ const printBanner = (): void => {
 };
 
 const pause = async (): Promise<void> => {
-  const { input } = await import('@inquirer/prompts');
   await input({ message: 'Press Enter to return to the main menu...' });
 };
 
@@ -62,22 +62,19 @@ export const mainMenu = async (): Promise<void> => {
         break;
 
       case 'customers':
-        await customerMenu();
+        await customerMenu();   // ✅ Phase 6.2
         break;
 
       case 'staff':
-        console.log('\n👔  Staff management — coming soon\n');
-        await pause();
+        await staffMenu();      // ✅ Phase 6.3
         break;
 
       case 'rooms':
-        console.log('\n🛏️   Room management — coming soon\n');
-        await pause();
+        await roomMenu();       // ✅ Phase 6.3
         break;
 
       case 'bookings':
-        console.log('\n📅  Booking management — coming soon\n');
-        await pause();
+        await bookingMenu();    // ✅ Phase 6.4
         break;
 
       case 'reports':
