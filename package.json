@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "cli": "ts-node --transpile-only src/cli/cli.ts",
+    "seed": "ts-node --transpile-only src/seed.ts",
     "lint": "eslint src/**/*.ts",
     "clean": "rimraf dist"
   },

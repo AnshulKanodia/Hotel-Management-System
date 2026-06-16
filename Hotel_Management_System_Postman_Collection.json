@@ -1,0 +1,373 @@
+{
+  "info": {
+    "_postman_id": "8b512a87-c81b-4171-bc01-9ff4e2098ca3",
+    "name": "Hotel Management System API",
+    "description": "Collection of REST API requests for testing the Hotel Management System with Zod validation, smart availability checks, check-in controls, and aggregation reports.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "health"
+          ]
+        },
+        "description": "Verify that the Express server is running and check uptime details."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Admin Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.success && jsonData.token) {",
+              "    pm.globals.set(\"admin_token\", jsonData.token);",
+              "    console.log(\"Saved admin_token to globals: \" + jsonData.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "login"
+          ]
+        },
+        "description": "Authenticate admin user and get session token (automatically saved to globals on success)."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Create Department",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Food & Beverage\",\n  \"description\": \"Handles restaurant orders, room service, and food preparation.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/departments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "departments"
+          ]
+        },
+        "description": "Create a new department (Requires Admin Token)."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Create Customer (Zod Validation Demo)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"9876543210\",\n  \"address\": \"123 Luxury Avenue, Metropolis\",\n  \"idProof\": \"Aadhar Card - 1234 5678 9012\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/customers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "customers"
+          ]
+        },
+        "description": "Create a new customer profile. Validates fields using Zod v4. Send incorrect values (e.g. invalid email or short phone) to test validation error response."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Create Room",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"roomNumber\": \"101\",\n  \"roomType\": \"Deluxe\",\n  \"pricePerNight\": 250,\n  \"capacity\": 2\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/rooms",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ]
+        },
+        "description": "Create a new room."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Check Live Room Availability",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/bookings/room-availability?checkIn=2026-06-18&checkOut=2026-06-20",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "bookings",
+            "room-availability"
+          ],
+          "query": [
+            {
+              "key": "checkIn",
+              "value": "2026-06-18"
+            },
+            {
+              "key": "checkOut",
+              "value": "2026-06-20"
+            }
+          ]
+        },
+        "description": "Fetches all rooms indicating whether they are available (true/false) based on existing bookings overlap for the given dates."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Create Booking",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": \"6579f1bc231011ff00223344\",\n  \"room\": \"6579f2cd342022aa11334455\",\n  \"checkInDate\": \"2026-06-18\",\n  \"checkOutDate\": \"2026-06-20\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/bookings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "bookings"
+          ]
+        },
+        "description": "Book a room. Note: Replace customer and room values with valid 24-character ObjectIds from your database."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Check In Guest (Physical Guard Demo)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/bookings/:id/checkin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "bookings",
+            ":id",
+            "checkin"
+          ]
+        },
+        "description": "Mark active booking as CheckedIn. Rejects with 409 Conflict if another active booking is currently checked into the same room."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Check Out Guest",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/bookings/:id/checkout",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "bookings",
+            ":id",
+            "checkout"
+          ]
+        },
+        "description": "Finalize check-out. Room changes to Available."
+      },
+      "response": []
+    },
+    {
+      "name": "10. Dashboard Analytics Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reports/dashboard",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "reports",
+            "dashboard"
+          ]
+        },
+        "description": "Fetch high-level overview metrics compiled using MongoDB aggregation pipelines."
+      },
+      "response": []
+    },
+    {
+      "name": "11. Top Customers Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reports/top-customers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "reports",
+            "top-customers"
+          ]
+        },
+        "description": "Fetch top 5 customers ordered by checkouts/stays counts, aggregated directly from MongoDB."
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ]
+}

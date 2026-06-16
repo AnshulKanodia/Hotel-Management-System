@@ -78,20 +78,38 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` and specify your credentials:
 ```env
 PORT=5000
 NODE_ENV=development
+ADMIN_PASSWORD=admin123
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/hotel_db?retryWrites=true&w=majority
 ```
 
-### 3. Run Development Server
+### 3. Populate Database (Seed Script)
+
+Populate the database with a pre-configured set of 7 departments, 20 rooms, 15 customers, 14 staff members, and 12 mock bookings:
+```bash
+npm run seed
+```
+
+### 4. Run API Server
 
 ```bash
 npm run dev
 ```
+The server will start at `http://localhost:5000`. 
+* **API Endpoints base path**: `http://localhost:5000/api`
+* **Web Admin Panel (SPA)**: `http://localhost:5000/admin/` (Login Password: `admin123` or your config)
 
-### 4. Build for Production
+### 5. Run Interactive CLI
+
+Connect directly to the database and manage hotel operations from the terminal:
+```bash
+npm run cli
+```
+
+### 6. Build for Production
 
 ```bash
 npm run build
@@ -190,15 +208,25 @@ Room status transitions automatically:
 
 ---
 
+## ✨ Key Features
+
+- **Interactive CLI**: Direct DB integration using `@inquirer/prompts` with full CRUD, dynamic tables, and ASCII-based reporting.
+- **Web Admin Panel**: Password-protected single-page dashboard loaded with quick room-state modifications, live overlap checks, and statistics.
+- **Zod Request Validation**: Declarative body schema definitions (`src/validators/schemas.ts`) protecting database integrity with clean, error-specific HTTP 400 structures.
+- **Smart Room Booking Engine**: Booking validation based on date-intervals instead of status filters (rooms occupied today can still be reserved for next week).
+- **Physical Occupancy Guard**: Checks during guest check-in to ensure no two bookings occupy a room at the same physical time, throwing a `409 Conflict` if blocked.
+- **MongoDB Aggregation Reports**: 8 different business performance analysis endpoints (occupancy, top-customers, revenue summary) calculated entirely on the database cluster.
+
+---
+
 ## 🧠 MongoDB Concepts Demonstrated
 
 - **Schema Design** with Mongoose (types, enums, required, unique, trim, match)
 - **ObjectId References** (population / virtual joins)
 - **Aggregation Pipeline** ($match, $group, $lookup, $project, $sort, $limit, $sum, $avg, $cond, $arrayElemAt)
-- **Timestamps** (createdAt / updatedAt on all schemas)
+- **Compound Database Indexes** for search and conflict performance
 - **Pre-save Hooks** (date validation on Booking)
-- **Indexes** (unique constraints on email, roomNumber, department name)
-- **Soft Delete** (booking cancellation without physical removal)
+- **Deletion Guards** preventing orphaning referencing schemas
 
 ---
 
@@ -214,6 +242,18 @@ Room status transitions automatically:
 { "success": false, "message": "..." }
 ```
 
+**Zod Validation Error (HTTP 400):**
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "email", "message": "Please enter a valid email address" },
+    { "field": "phone", "message": "Phone number must be 10–15 digits" }
+  ]
+}
+```
+
 ---
 
 ## 🔮 Future Scope
@@ -224,7 +264,6 @@ Room status transitions automatically:
 - **Email Notifications** — Nodemailer for booking confirmations
 - **Pagination & Filtering** — query params for large datasets
 - **Rate Limiting** — express-rate-limit to prevent abuse
-- **Input Validation** — Joi or Zod schema validators
 - **Unit & Integration Tests** — Jest + Supertest
 - **Docker** — containerised deployment
 - **Swagger / OpenAPI** — auto-generated API documentation
